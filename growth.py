@@ -12,6 +12,7 @@ import matplotlib.pyplot as plt
 # here I will do everything by hand for clarity 
 
 ### Parameters:
+# t: time, for compliance with solve_ivp call
 # u: vector of population density at each 
 # D: diffusion constant
 # r: growth rate
@@ -20,7 +21,7 @@ def fk(t, u, D, r, K):
     N = len(u)
     u_t = np.zeros(N) # du/dt
 
-    for i in range(0, N-1):
+    for i in range(0, N):
         # using the (second order) central difference approximation
         # \[ f``(x) ~ \frac{f(x+h) - 2f(x) + f(x-h)}{h^2} \] 
         # here, h will be 1
@@ -33,6 +34,37 @@ def fk(t, u, D, r, K):
 
         u_t[i] = (D * u_xx) + (r * u[i] * (1 - (u[i]/K)))
     return u_t
+
+def fk_polar():
+    N = len(u)
+    # https://www.math.ucdavis.edu/~saito/courses/21C.w11/polar-lap.pdf
+    # Polar Laplacian: \[ u_{xx} + u_{yy} = u_{rr} + \frac{1}{r}u_r + \frac{1}{r^2}u_{\theta\theta\]
+
+def fk_2d():
+    nx = len(u)
+    ny = len(u[0])
+    u_t = np.zeros(nx, ny)
+
+    # using the (second order) central difference approximation
+    for i in range(0,nx):
+        for j in range(0,ny):
+            # find u_xx 
+            if (i == nx - 1):
+                u_xx = - 2*u[i][j] + u[i-1][j]
+            elif (i == 0):
+                u_xx = u[i+1][j] - 2*u[i][j]
+            else:
+                u_xx = u[i+1][j] - 2*u[i][j] + u[i-1][j]
+
+            # find u_yy
+            if (i == N - 1):
+                u_yy = - 2*u[i][j] + u[i][j-1]
+            elif (i == 0):
+                u_yy = u[i][j+1] - 2*u[i][j]
+            else:
+                u_yy = u[i][j+1] - 2*u[i][j] + u[i][j-1]
+
+            u_t[i][j] = (D * (u_xx + u_yy)) + (r * u[i] * (1 - (u[i]/K)))
 
 # Simulate Fisher Kolmorogov Model
 def fk_sim():
