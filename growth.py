@@ -40,10 +40,11 @@ def fk_polar():
     # https://www.math.ucdavis.edu/~saito/courses/21C.w11/polar-lap.pdf
     # Polar Laplacian: \[ u_{xx} + u_{yy} = u_{rr} + \frac{1}{r}u_r + \frac{1}{r^2}u_{\theta\theta\]
 
-def fk_2d():
+def fk_2d(u, dt, D, r, K):
     nx = len(u)
     ny = len(u[0])
-    u_t = np.zeros(nx, ny)
+    u_t = np.zeros((nx, ny))
+    u_new = u
 
     # using the (second order) central difference approximation
     for i in range(0,nx):
@@ -57,17 +58,20 @@ def fk_2d():
                 u_xx = u[i+1][j] - 2*u[i][j] + u[i-1][j]
 
             # find u_yy
-            if (i == N - 1):
+            if (j == ny - 1):
                 u_yy = - 2*u[i][j] + u[i][j-1]
-            elif (i == 0):
+            elif (j == 0):
                 u_yy = u[i][j+1] - 2*u[i][j]
             else:
                 u_yy = u[i][j+1] - 2*u[i][j] + u[i][j-1]
 
-            u_t[i][j] = (D * (u_xx + u_yy)) + (r * u[i] * (1 - (u[i]/K)))
+            u_t[i][j] = (D * (u_xx + u_yy)) + (r * u[i][j] * (1 - (u[i][j]/K)))
+            u_new[i][j] = u[i][j] + dt*u_t[i][j]
+    
+    return u_new
 
 # Simulate Fisher Kolmorogov Model
-def fk_sim():
+def fk_sim_1d():
     # Define parameters
     D = 0.1      # Diffusion constant
     r = 1        # Growth rate
@@ -98,4 +102,48 @@ def fk_sim():
     plt.grid(True) # add grid lines
     plt.show()
 
-fk_sim()
+
+# Simulate Fisher Kolmorogov Model
+def fk_sim_2d():
+    # Define parameters
+    D = 0.1     # Diffusion constant
+    r = 1       # Growth rate
+    K = 1       # Carrying capacity (1 because it is density being measured)
+    
+    T = 20 # total duration
+    dt = .1 # time step
+    nt = int(T/dt)     # Number of time points to evaulate at
+    
+    xmax = 10
+    ymax = 10
+    dx = 0.1
+    dy = 0.1 # spatial step lengths
+    nx = int(xmax/dx)    # Number of points in x
+    ny = int(ymax/dy)    # Number of points in y
+
+    # Initial conditions
+    u = np.zeros((nx,ny))
+    u[int(nx/2-nx/4):int(nx/2+nx/4), int(ny/2-ny/4):int(ny/2+ny/4)] = 0.9 # set seed
+
+
+    plt.ion()
+    fig, ax = plt.subplots()
+    im = ax.imshow(u, extent=[0, xmax, 0, ymax], vmin=0, vmax=1, origin='lower', cmap='plasma')
+    fig.colorbar(im)
+ 
+    for n in range(nt):
+        u = fk_2d(u, dt, D, r, K)
+    
+        if n % 10 == 0:
+            im.set_data(u)
+            ax.set_title(f'Time: {n*dt:.2f}')
+            fig.canvas.draw_idle()
+            plt.pause(0.01)
+
+    plt.ioff()
+    plt.xlabel('x')
+    plt.ylabel('u(x,t)')
+    plt.title('Fisher-Kolmogorov Equation Solution')
+    plt.show()
+
+fk_sim_2d()
