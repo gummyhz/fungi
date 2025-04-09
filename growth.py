@@ -20,7 +20,7 @@ from scipy.ndimage import convolve
 # D: diffusion constant
 # r: growth rate
 # K: carrying capacity
-def fk(t, u, D, r, K):
+def fk_1d(t, u, D, r, K):
     N = len(u)
     u_t = np.zeros(N) # du/dt
 
@@ -40,7 +40,6 @@ def fk(t, u, D, r, K):
 
 def fk_polar():
     N = len(u)
-    # https://www.math.ucdavis.edu/~saito/courses/21C.w11/polar-lap.pdf
     # Polar Laplacian: \[ u_{xx} + u_{yy} = u_{rr} + \frac{1}{r}u_r + \frac{1}{r^2}u_{\theta\theta\]
 
 # 2-D Fisher Kolmorogov using my direct interpretation of the laplacian formula
@@ -106,7 +105,7 @@ def fk_sim_1d():
     t_eval = range(0,20,3)
 
     # Solve the equation using solve_ivp
-    sol = solve_ivp(fk, t_span, u0, args=(D, r, K), dense_output=True, t_eval=t_eval, method='RK45')
+    sol = solve_ivp(fk_1d, t_span, u0, args=(D, r, K), dense_output=True, t_eval=t_eval, method='RK45')
 
     x = range(0,100)
     # Plot the solution
@@ -123,32 +122,33 @@ def fk_sim_1d():
 
 # Simulate Fisher Kolmorogov Model
 def fk_sim_2d():
-    # Define parameters
-    D = 0.1    # Diffusion constant
-    r = .9       # Growth rate
-    K = .8       # Carrying capacity (1 because it is density being measured)
+    # define parameters
+    D = 0.1 # Diffusion constant
+    r = .9  # Growth rate
+    K = .8  # Carrying capacity (1 because it is density being measured)
     
-    T = 10 # total duration
-    dt = .01 # time step
-    nt = int(T/dt)     # Number of time points to evaulate at
+    T = 10          # Total duration
+    dt = .01        # Time step
+    nt = int(T/dt)  # Number of time points to evaulate at
     
-    xmax = 10
-    ymax = 10
-    dx = 0.1
-    dy = 0.1 # spatial step lengths
-    nx = int(xmax/dx)    # Number of points in x
-    ny = int(ymax/dy)    # Number of points in y
+    xmax = 10           # Max y value (min=0)
+    ymax = 10           # Max y value (min=0)
+    dx = 0.1            # Spatial step length in x
+    dy = 0.1            # Spatial step length in y
+    nx = int(xmax/dx)   # Number of points in x
+    ny = int(ymax/dy)   # Number of points in y
 
-    # Initial conditions
+    # initial conditions
     u = np.zeros((nx,ny))
     u[int(nx/2-nx/4):int(nx/2+nx/4), int(ny/2-ny/4):int(ny/2+ny/4)] = 0.9 # set seed
 
-
+    # set up plot
     plt.ion()
     fig, ax = plt.subplots()
     im = ax.imshow(u, extent=[0, xmax, 0, ymax], vmin=0, vmax=1, origin='lower', cmap='plasma')
     fig.colorbar(im)
  
+    # plot at each time step
     for n in range(nt):
         # comment out either line to choose which method to use to update u
         #u = fk_2d(u, dt, D, r, K)
@@ -160,10 +160,13 @@ def fk_sim_2d():
             fig.canvas.draw_idle()
             plt.pause(0.01)
 
+    # additional plot settings
     plt.ioff()
     plt.xlabel('x')
     plt.ylabel('u(x,t)')
     plt.title('Fisher-Kolmogorov Equation Solution')
     plt.show()
 
+# END FUNCITON DEFINITIONS ------------------------
+# fk_sim_1d()
 fk_sim_2d()
